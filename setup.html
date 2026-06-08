@@ -1,0 +1,157 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LVO — Authenticator Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a; --gold: #b8953f; --gold-dim: #7a5f1a;
+    --text: #e8e6e0; --text-muted: #5a5650; --border: #2a2a2a;
+    --red: #c0392b; --green: #27ae60;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--black); color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 40px 20px;
+  }
+  .card {
+    width: 100%; max-width: 480px;
+    border: 1px solid var(--border);
+    padding: 48px 40px;
+    display: flex; flex-direction: column; align-items: center; gap: 24px;
+  }
+  h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300; font-size: 28px;
+    letter-spacing: 0.3em; color: var(--gold);
+    text-align: center;
+  }
+  .sub {
+    font-size: 9px; letter-spacing: 0.3em; color: var(--text-muted);
+    text-transform: uppercase; text-align: center;
+  }
+  .rule { width: 100%; height: 1px; background: linear-gradient(90deg, transparent, var(--gold-dim), transparent); }
+  .step {
+    width: 100%; display: flex; flex-direction: column; gap: 8px;
+  }
+  .step-num {
+    font-size: 9px; letter-spacing: 0.3em; color: var(--gold);
+    text-transform: uppercase;
+  }
+  .step p {
+    font-size: 11px; letter-spacing: 0.1em; color: var(--text-muted); line-height: 1.7;
+  }
+  #qr-wrap {
+    width: 200px; height: 200px;
+    background: white; display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--border);
+  }
+  #qr-wrap img { width: 100%; height: 100%; display: block; }
+  .secret-box {
+    width: 100%; background: #111; border: 1px solid var(--border);
+    padding: 12px 16px; font-size: 13px; letter-spacing: 0.15em;
+    color: var(--gold); word-break: break-all; text-align: center;
+  }
+  .notice {
+    font-size: 10px; letter-spacing: 0.15em; color: var(--text-muted);
+    text-align: center; line-height: 1.7;
+    border-left: 2px solid var(--gold-dim); padding-left: 12px;
+  }
+  .notice strong { color: var(--gold); }
+  #status {
+    font-size: 10px; letter-spacing: 0.2em; color: var(--text-muted);
+    text-align: center;
+  }
+  .btn {
+    width: 100%; padding: 12px; background: transparent;
+    border: 1px solid #b8953f44; color: var(--gold);
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.3em; text-transform: uppercase; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn:hover { background: #b8953f11; }
+  .err { color: var(--red); }
+  .ok  { color: var(--green); }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>LVO</h1>
+  <p class="sub">Authenticator Setup</p>
+  <div class="rule"></div>
+
+  <div class="step">
+    <div class="step-num">Step 01 — Scan QR Code</div>
+    <p>Open Microsoft Authenticator on your phone. Tap + → Work or school account → Scan QR code.</p>
+  </div>
+
+  <div id="qr-wrap"><span id="status">Loading...</span></div>
+
+  <div class="step">
+    <div class="step-num">Step 02 — Or Enter Manually</div>
+    <p>If scanning fails, add a manual entry in Microsoft Authenticator using this secret:</p>
+  </div>
+
+  <div class="secret-box" id="secret-display">—</div>
+
+  <div class="rule"></div>
+
+  <div class="step">
+    <div class="step-num">Step 03 — Save Your Secret</div>
+    <div class="notice">
+      Copy the secret above and add it to Vercel as an environment variable:<br><br>
+      <strong>TOTP_SECRET</strong> = the value shown above<br><br>
+      Then redeploy. You only need to do this once.
+    </div>
+  </div>
+
+  <button class="btn" onclick="window.location.href='/'">← Back to Login</button>
+</div>
+
+<script>
+  async function loadSetup() {
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('key');
+
+    if (!key) {
+      document.getElementById('status').textContent = 'Missing setup key in URL';
+      document.getElementById('status').className = 'err';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/setup?setupKey=${encodeURIComponent(key)}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById('status').textContent = data.error || 'Forbidden';
+        document.getElementById('status').className = 'err';
+        return;
+      }
+
+      // Show QR
+      const qrWrap = document.getElementById('qr-wrap');
+      const img = document.createElement('img');
+      img.src = data.qr;
+      img.alt = 'QR Code';
+      qrWrap.innerHTML = '';
+      qrWrap.appendChild(img);
+
+      // Show secret
+      document.getElementById('secret-display').textContent = data.secret;
+
+    } catch (e) {
+      document.getElementById('status').textContent = 'Failed to load setup';
+      document.getElementById('status').className = 'err';
+    }
+  }
+
+  loadSetup();
+</script>
+</body>
+</html>
