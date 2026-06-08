@@ -1,0 +1,8 @@
+{
+  "name": "lvo-setup",
+  "version": "1.0.0",
+  "dependencies": {
+    "otplib": "^12.0.1",
+    "qrcode": "^1.5.3"
+  }
+}
