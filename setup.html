@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -134,7 +133,6 @@
         return;
       }
 
-      // Show QR
       const qrWrap = document.getElementById('qr-wrap');
       const img = document.createElement('img');
       img.src = data.qr;
@@ -142,7 +140,6 @@
       qrWrap.innerHTML = '';
       qrWrap.appendChild(img);
 
-      // Show secret
       document.getElementById('secret-display').textContent = data.secret;
 
     } catch (e) {
